@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Flyte - Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #e0e0e0; }
+        .hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 80px 40px; text-align: center;
+            border-bottom: 2px solid #00d4ff33;
+        }
+        .hero h1 { font-size: 64px; color: #00d4ff; letter-spacing: 8px; font-weight: 900; }
+        .hero p { color: #888; margin-top: 12px; font-size: 16px; letter-spacing: 2px; }
+        .hero .cta { display: inline-block; margin-top: 30px; padding: 14px 40px; background: #00d4ff; color: #0f0f1a; border-radius: 8px; font-weight: 900; text-decoration: none; letter-spacing: 2px; }
+
+        .container { padding: 60px 40px; max-width: 1100px; margin: 0 auto; }
+        h2 { font-size: 18px; color: #00d4ff; letter-spacing: 2px; margin-bottom: 20px; }
+
+        table { width: 100%; border-collapse: collapse; background: #1a1a2e; border-radius: 12px; overflow: hidden; margin-bottom: 50px; }
+        th { background: #0f0f1a; color: #888; font-size: 11px; letter-spacing: 2px; padding: 16px 20px; text-align: left; }
+        td { padding: 16px 20px; border-top: 1px solid #ffffff08; font-size: 14px; }
+        tr:hover td { background: #ffffff05; }
+
+        .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-confirmed { background: #00ff8822; color: #00ff88; }
+        .badge-pending    { background: #ffaa0022; color: #ffaa00; }
+        .badge-cancelled  { background: #ff4d4d22; color: #ff4d4d; }
+        .footer { text-align: center; padding: 40px; color: #333; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <h1>✈ FLYTE</h1>
+    <p>FLIGHT BOOKING SYSTEM — DEMO PAGE</p>
+    <a href="/admin" class="cta">GO TO DASHBOARD</a>
+</div>
+
+<div class="container">
+    <h2>SAMPLE FLIGHTS</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>FLIGHT NO.</th><th>ORIGIN</th><th>DESTINATION</th>
+                <th>DEPARTURE</th><th>ARRIVAL</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>FLY-001</td><td>Nairobi</td><td>London</td><td>15 Jun 2025 08:00</td><td>15 Jun 2025 20:00</td></tr>
+            <tr><td>FLY-002</td><td>Lagos</td><td>Dubai</td><td>16 Jun 2025 10:30</td><td>16 Jun 2025 22:00</td></tr>
+            <tr><td>FLY-003</td><td>Johannesburg</td><td>New York</td><td>17 Jun 2025 06:00</td><td>17 Jun 2025 23:45</td></tr>
+            <tr><td>FLY-004</td><td>Cairo</td><td>Paris</td><td>18 Jun 2025 14:00</td><td>18 Jun 2025 19:30</td></tr>
+        </tbody>
+    </table>
+
+    <h2>SAMPLE BOOKINGS</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th><th>PASSENGER</th><th>FLIGHT</th><th>ROUTE</th><th>STATUS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>1</td><td>Alice Kamau</td><td>FLY-001</td><td>Nairobi → London</td><td><span class="badge badge-confirmed">Confirmed</span></td></tr>
+            <tr><td>2</td><td>Brian Osei</td><td>FLY-001</td><td>Nairobi → London</td><td><span class="badge badge-pending">Pending</span></td></tr>
+            <tr><td>3</td><td>Chidi Nwosu</td><td>FLY-002</td><td>Lagos → Dubai</td><td><span class="badge badge-confirmed">Confirmed</span></td></tr>
+            <tr><td>4</td><td>Diana Mensah</td><td>FLY-003</td><td>Johannesburg → New York</td><td><span class="badge badge-cancelled">Cancelled</span></td></tr>
+            <tr><td>5</td><td>Emmanuel Tadesse</td><td>FLY-004</td><td>Cairo → Paris</td><td><span class="badge badge-confirmed">Confirmed</span></td></tr>
+            <tr><td>6</td><td>Fatima Al-Hassan</td><td>FLY-002</td><td>Lagos → Dubai</td><td><span class="badge badge-pending">Pending</span></td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="footer">FLYTE BOOKING SYSTEM © 2025 — BUILT WITH SPRING BOOT + THYMELEAF + SQLITE</div>
+</body>
+</html>

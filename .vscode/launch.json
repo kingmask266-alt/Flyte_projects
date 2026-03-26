@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-FlyteApplication<flyte>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.flyte.FlyteApplication",
+            "projectName": "flyte",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

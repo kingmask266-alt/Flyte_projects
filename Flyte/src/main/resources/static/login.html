@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flyte Login</title>
+</head>
+<body>
+<h1>Flyte Admin Login</h1>
+<form id="loginForm">
+    <label>Username: <input type="text" id="username" /></label><br/>
+    <label>Password: <input type="password" id="password" /></label><br/>
+    <button type="submit">Login</button>
+</form>
+
+<h2>Result</h2>
+<pre id="result"></pre>
+
+<script>
+    const form = document.getElementById("loginForm");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        // Call login endpoint
+        const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+        if (data.token) {
+            localStorage.setItem("jwt", data.token);
+            result.textContent = "Login successful! Token stored.";
+        } else {
+            result.textContent = "Login failed: " + JSON.stringify(data);
+        }
+    });
+
+    // Example: fetch bookings/all after login
+    async function fetchBookings() {
+        const token = localStorage.getItem("jwt");
+        const response = await fetch("/api/bookings/all", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const data = await response.json();
+        result.textContent = JSON.stringify(data, null, 2);
+    }
+
+    // Call fetchBookings after 5 seconds (demo)
+    setTimeout(fetchBookings, 5000);
+</script>
+</body>
+</html>
