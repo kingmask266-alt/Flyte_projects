@@ -1,0 +1,14 @@
+# Compiled output
+target/
+
+# Sensitive config
+**/application.properties
+**/application.yml
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Database files
+*.db
