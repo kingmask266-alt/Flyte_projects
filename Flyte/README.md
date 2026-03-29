@@ -1,83 +1,71 @@
 # ✈ Flyte — Flight Booking System
+A collaborative flight booking system project
 
-A full Spring Boot flight booking system with SQLite, Thymeleaf, and JPA.
+Overview
+Flyte is a group project built to simulate a modern airline booking platform. It provides passengers with a seamless experience to search flights, make bookings, and complete payments (including MPESA STK Push integration). Administrators can manage flights, users, and monitor transactions through a secure dashboard.
 
----
+Features
+🔐 Authentication & Roles: Passenger and Admin access with JWT security
 
-## 🚀 How to Run
+🛫 Flight Management: Create, update, and list available flights
+
+📑 Bookings: Passengers can book seats with class and seat number tracking
+
+💳 Payments: Integrated MPESA STK Push (sandbox) and Stripe support
+
+📊 Admin Dashboard: Manage users, bookings, and payments with Spring Boot security
+
+🗄️ Database: MySQL schema with ER diagrams and seeders for demo data
+
 
 ### Prerequisites
 - Java 17+
 - Maven 3.8+
 
-### Steps
-```bash
-# 1. Navigate into the project
+Tech Stack
+Backend: Java Spring Boot
+
+Frontend: Thymeleaf templates, HTML/CSS/JS
+
+Database: MySQL
+
+Payments: MPESA Daraja API, Stripe
+
+Security: Spring Security with JWT
+
+Project Structure
+Code
+src/main/java/com/flyte/
+ ├── controller/       # REST controllers
+ ├── entity/           # JPA entities
+ ├── repository/       # Spring Data repositories
+ ├── service/          # Business logic
+ └── security/         # JWT & role-based access
+Getting Started
+Clone the repo:
+
+bash
+git clone https://github.com/<your-org>/Flyte.git
 cd Flyte
+Configure your database in application.properties (see application.properties.example).
 
-# 2. Build the project
-mvn clean install
+Run migrations and seeders (AdminSeeder, FlightSeeder).
 
-# 3. Run the application
+Start the app:
+
+bash
 mvn spring-boot:run
-```
+Access the app at http://localhost:8080.
 
-### Access the App
-| URL | Description |
-|-----|-------------|
-| http://localhost:8080/ | Redirects to Admin Dashboard |
-| http://localhost:8080/admin | Admin Dashboard |
-| http://localhost:8080/flights | All Flights |
-| http://localhost:8080/flights/add | Add New Flight |
-| http://localhost:8080/bookings | All Bookings |
-| http://localhost:8080/book/{flightId} | Book a Flight |
+Contributors 👥
+This project was built collaboratively by our team:
 
----
+Lyean — Team Lead, Developer
 
-## 🏗 Project Structure
+Job — Developer
 
-```
-Flyte/
-├── pom.xml
-└── src/main/
-    ├── java/com/flyte/
-    │   ├── FlyteApplication.java        ← Entry point
-    │   ├── DataSeeder.java              ← Sample seed data
-    │   ├── entity/
-    │   │   ├── Flight.java
-    │   │   └── Booking.java
-    │   ├── repository/
-    │   │   ├── FlightRepository.java
-    │   │   └── BookingRepository.java
-    │   ├── service/
-    │   │   ├── FlightService.java
-    │   │   └── BookingService.java
-    │   └── controller/
-    │       ├── AdminController.java
-    │       ├── FlightController.java
-    │       └── BookingController.java
-    └── resources/
-        ├── application.properties
-        └── templates/
-            ├── admin.html
-            ├── flyte_demo.html
-            ├── flights/
-            │   ├── list.html
-            │   └── add.html
-            └── bookings/
-                ├── list.html
-                └── book.html
-```
+Beavon — Developer
 
----
+Brandon — Developer
 
-## 🗄 Database
-- SQLite file: `flyte_booking.db` (auto-created on first run)
-- Seed data: 4 flights + 6 bookings loaded automatically
-
-## 📦 Tech Stack
-- **Spring Boot 3.2**
-- **Spring Data JPA** (Hibernate)
-- **SQLite** (via Xerial JDBC)
-- **Thymeleaf** (HTML templates)
-- **Maven**
+Together we designed, implemented, and tested Flyte as a professional group project.
