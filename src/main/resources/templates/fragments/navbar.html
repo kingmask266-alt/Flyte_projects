@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="publicNavbar(activeNav)" class="site-nav">
+    <a class="logo" href="#top">Fly<span>te</span></a>
+    <ul class="nav-links">
+        <li><a th:classappend="${activeNav == 'discover'} ? ' active'" href="#discover">Routes</a></li>
+        <li><a th:classappend="${activeNav == 'flights'} ? ' active'" href="#flights">Live Flights</a></li>
+        <li><a th:classappend="${activeNav == 'bookings'} ? ' active'" href="#bookings">My Bookings</a></li>
+    </ul>
+    <div id="navActions" class="actions nav-actions">
+        <button class="btn ghost" type="button" onclick="openModal('login')">Passenger Sign In</button>
+        <a class="btn ghost" href="/login">Admin Portal</a>
+        <button class="btn primary" type="button" onclick="openModal('register')">Create Account</button>
+    </div>
+</nav>
+
+<div th:fragment="adminNavbar(pageTitle)" class="dashboard-topbar">
+    <div>
+        <p class="eyebrow">Flyte admin</p>
+        <h2 th:text="${pageTitle}">Flyte Admin Dashboard</h2>
+    </div>
+    <div class="actions nav-actions">
+        <a class="btn ghost" href="/">Homepage</a>
+        <form th:action="@{/logout}" method="post">
+            <button class="btn primary" type="submit">Log Out</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

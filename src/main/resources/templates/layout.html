@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="page(pageTitle, pageName, activeNav, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Flyte</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body th:class="${pageName == 'dashboard'} ? 'dashboard-page' : 'landing-page'">
+<th:block th:if="${pageName == 'dashboard'}">
+    <div class="dashboard-shell">
+        <aside th:replace="~{fragments/sidebar :: adminSidebar(${activeNav})}"></aside>
+        <div class="dashboard-stage">
+            <header th:replace="~{fragments/navbar :: adminNavbar(${pageTitle})}"></header>
+            <main class="dashboard-main" th:replace="${content}"></main>
+        </div>
+    </div>
+</th:block>
+<th:block th:unless="${pageName == 'dashboard'}">
+    <div class="shell">
+        <header th:replace="~{fragments/navbar :: publicNavbar(${activeNav})}"></header>
+        <main th:replace="${content}"></main>
+        <footer class="wrap site-footer">
+            <div class="brand">Fly<span>te</span></div>
+            <div>Spring Boot · Security · MySQL · JWT</div>
+            <div>© 2026 Flyte</div>
+        </footer>
+    </div>
+</th:block>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

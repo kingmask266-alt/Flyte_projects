@@ -1,0 +1,19 @@
+# Copy this file to application.properties and fill in your values
+server.port=8080
+spring.datasource.url=jdbc:mysql://localhost:3306/flyte_db
+spring.datasource.username=root
+spring.datasource.password=
+
+jwt.secret=
+jwt.expiration=86400000
+
+mpesa.consumer.key=
+mpesa.consumer.secret=
+mpesa.passkey=
+mpesa.shortcode=174379
+mpesa.callback.url=
+mpesa.base.url=https://sandbox.safaricom.co.ke
+
+stripe.secret.key=
+stripe.public.key=
+stripe.webhook.secret=

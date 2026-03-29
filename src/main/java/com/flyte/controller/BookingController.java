@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Booking management endpoints.
  *
- * CUSTOMER:
+ * PASSENGER:
  *   POST   /api/bookings           → book a flight
  *   DELETE /api/bookings/{id}      → cancel own booking
  *   GET    /api/bookings/my        → view own bookings

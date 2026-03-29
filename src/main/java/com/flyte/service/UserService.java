@@ -27,7 +27,7 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * Register a new CUSTOMER account.
+     * Register a new PASSENGER account.
      * Throws IllegalArgumentException if username or email already exists.
      */
     public User registerUser(RegisterRequest request) {

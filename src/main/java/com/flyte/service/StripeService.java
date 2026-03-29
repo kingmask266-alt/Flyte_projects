@@ -37,6 +37,9 @@ public class StripeService {
     @Value("${stripe.secret.key}")
     private String stripeSecretKey;
 
+    @Value("${stripe.public.key}")
+    private String stripePublicKey;
+
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeSecretKey;
@@ -50,8 +53,16 @@ public class StripeService {
      * @return Stripe client secret string
      */
     public String createPaymentIntent(Long bookingId) {
+        return createPaymentIntent(bookingId, null);
+    }
+
+    public String createPaymentIntent(Long bookingId, String username) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+
+        if (username != null && !booking.getUser().getUsername().equals(username)) {
+            throw new SecurityException("You are not authorized to pay for this booking.");
+        }
 
         try {
             // Stripe amounts are in smallest currency unit (cents for USD, or fill in for KES)
@@ -82,8 +93,12 @@ public class StripeService {
 
         } catch (StripeException e) {
             log.error("Stripe error: {}", e.getMessage());
-            throw new RuntimeException("Failed to create Stripe payment: " + e.getMessage());
+            throw new IllegalStateException("Failed to create Stripe payment: " + e.getMessage());
         }
+    }
+
+    public String getPublishableKey() {
+        return stripePublicKey;
     }
 
     /**
@@ -101,5 +116,32 @@ public class StripeService {
         paymentRepository.save(payment);
 
         log.info("Stripe payment {} → status: {}", paymentIntentId, payment.getStatus());
+    }
+
+    public Payment syncPaymentStatus(Long bookingId, String username) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+
+        if (!booking.getUser().getUsername().equals(username)) {
+            throw new SecurityException("You are not authorized to verify this payment.");
+        }
+
+        Payment payment = paymentRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for booking: " + bookingId));
+
+        if (payment.getPaymentMethod() != PaymentMethod.STRIPE || payment.getTransactionReference() == null) {
+            throw new IllegalStateException("No Stripe payment intent exists for this booking.");
+        }
+
+        try {
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(payment.getTransactionReference());
+            boolean succeeded = "succeeded".equals(paymentIntent.getStatus());
+            payment.setStatus(succeeded ? PaymentStatus.SUCCESS : PaymentStatus.FAILED);
+            paymentRepository.save(payment);
+            return payment;
+        } catch (StripeException e) {
+            log.error("Stripe sync error: {}", e.getMessage());
+            throw new IllegalStateException("Failed to sync Stripe payment: " + e.getMessage());
+        }
     }
 }

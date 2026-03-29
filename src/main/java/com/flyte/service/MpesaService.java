@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
  * Integrates with Safaricom Daraja API for Mpesa STK Push payments.
  *
@@ -64,22 +65,43 @@ public class MpesaService {
      * Step 1: Get OAuth access token from Safaricom.
      */
     private String getAccessToken() {
+        log.info("Attempting to get Mpesa access token from: {}", mpesaBaseUrl);
+        log.info("Using consumer key: {}", consumerKey.substring(0, 5) + "...");
+
         String credentials = Base64.getEncoder()
-                .encodeToString((consumerKey + ":" + consumerSecret).getBytes());
+                .encodeToString((consumerKey + ":" + consumerSecret)
+                        .getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
 
-        Map<?, ?> response = webClientBuilder.build()
-                .get()
-                .uri(mpesaBaseUrl + "/oauth/v1/generate?grant_type=client_credentials")
-                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
+        try {
+            Map<?, ?> response = webClientBuilder.build()
+                    .get()
+                    .uri(mpesaBaseUrl + "/oauth/v1/generate?grant_type=client_credentials")
+                    .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials)
+                    .retrieve()
+                    .onStatus(status -> status.isError(), clientResponse -> {
+                        return clientResponse.bodyToMono(String.class)
+                                .map(body -> {
+                                    log.error("Safaricom token error - Status: {} Body: {}",
+                                            clientResponse.statusCode(), body);
+                                    return new RuntimeException("Token error: " + body);
+                                });
+                    })
+                    .bodyToMono(Map.class)
+                    .doOnError(error -> log.error("WebClient error getting token: {}", error.getMessage()))
+                    .block();
 
-        if (response == null || !response.containsKey("access_token")) {
-            throw new RuntimeException("Failed to retrieve Mpesa access token");
+            if (response == null || !response.containsKey("access_token")) {
+                log.error("Token response was null or missing access_token: {}", response);
+                throw new RuntimeException("Failed to retrieve Mpesa access token");
+            }
+
+            log.info("Successfully got Mpesa access token");
+            return (String) response.get("access_token");
+
+        } catch (Exception e) {
+            log.error("Exception getting access token: {} - {}", e.getClass().getSimpleName(), e.getMessage());
+            throw new RuntimeException("Mpesa token fetch failed: " + e.getMessage(), e);
         }
-
-        return (String) response.get("access_token");
     }
 
     /**

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Flyte | Fly Smarter', 'home', 'discover', ~{::main})}">
+<main id="top">
+    <section class="hero hero-premium">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="hero-copy">
+            <p class="hero-eyebrow">Premium Aviation Experience</p>
+            <h1 class="hero-title">
+                The sky<br>
+                <em>reimagined</em><br>
+                for you.
+            </h1>
+            <p class="hero-subtitle">
+                Flyte now pairs a premium first impression with the real booking backend:
+                live flight search, passenger sign in, registration, and booking all work from this page.
+            </p>
+            <div class="actions">
+                <button class="btn primary" type="button" onclick="document.getElementById('flights').scrollIntoView({behavior:'smooth'})">Explore Flights</button>
+                <button class="btn ghost" type="button" onclick="openModal('register')">Create Account</button>
+            </div>
+            <div class="metrics premium-metrics">
+                <div class="metric"><strong id="heroFlights" class="num">0</strong><span>Published flights</span></div>
+                <div class="metric"><strong class="num">4</strong><span>Cabin classes</span></div>
+                <div class="metric"><strong class="num">24/7</strong><span>Booking access</span></div>
+            </div>
+        </div>
+
+        <aside class="search-card">
+            <div class="search-tabs">
+                <button id="tripOneWay" class="tab active" type="button" onclick="setTripTab('one-way')">One Way</button>
+                <button id="tripRoundTrip" class="tab" type="button" onclick="setTripTab('round-trip')">Round Trip</button>
+                <button id="tripMultiCity" class="tab" type="button" onclick="setTripTab('multi-city')">Multi-City</button>
+            </div>
+
+            <div class="search-fields">
+                <div class="field premium-field">
+                    <label for="sOrigin" class="field-label">From</label>
+                    <input id="sOrigin" type="text" placeholder="Nairobi, NBO">
+                </div>
+                <div class="field premium-field">
+                    <label for="sDest" class="field-label">To</label>
+                    <input id="sDest" type="text" placeholder="Where to?">
+                </div>
+                <div class="field premium-field">
+                    <label for="sDate" class="field-label">Depart</label>
+                    <input id="sDate" type="date">
+                </div>
+                <div class="field premium-field">
+                    <label for="sSeat" class="field-label">Class</label>
+                    <select id="sSeat">
+                        <option value="">Any class</option>
+                        <option value="ECONOMY">Economy</option>
+                        <option value="PREMIUM_ECONOMY">Premium Economy</option>
+                        <option value="BUSINESS">Business</option>
+                        <option value="FIRST_CLASS">First Class</option>
+                    </select>
+                </div>
+                <button class="search-btn" type="button" onclick="searchFlights()">
+                    Search
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M5 12h14M12 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+            <p id="searchFeedback" class="hint">Search by route and date or load every published flight.</p>
+        </aside>
+
+        <div class="scroll-hint">
+            <div class="scroll-line"></div>
+            Explore routes
+        </div>
+    </section>
+
+    <section class="wrap stats premium-stats">
+        <div class="stat"><strong id="cntFlights" class="num">0</strong><span>Flights available</span></div>
+        <div class="stat"><strong id="cntRoutes" class="num">0</strong><span>Routes served</span></div>
+        <div class="stat"><strong id="cntSeats" class="num">0</strong><span>Seats visible</span></div>
+        <div class="stat"><strong class="num">2</strong><span>Browser auth flows</span></div>
+    </section>
+
+    <section id="discover" class="wrap routes">
+        <div class="section-header">
+            <div>
+                <p class="section-eyebrow">Curated for you</p>
+                <h2 class="section-title">Popular<br>Routes</h2>
+            </div>
+            <a href="#flights" class="section-link">
+                View live flights
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M5 12h14M12 5l7 7-7 7"></path>
+                </svg>
+            </a>
+        </div>
+
+        <div class="routes-grid">
+            <article class="route-card">
+                <div class="route-cities"><span>NBO</span><span class="route-arrow">→</span><span>MBA</span></div>
+                <p class="route-meta">Nairobi to Mombasa · Coastal short-haul</p>
+                <div class="route-price">KES 8,500 <span>from</span></div>
+            </article>
+            <article class="route-card">
+                <div class="route-cities"><span>NBO</span><span class="route-arrow">→</span><span>DXB</span></div>
+                <p class="route-meta">Nairobi to Dubai · Business gateway</p>
+                <div class="route-price">KES 62,000 <span>from</span></div>
+            </article>
+            <article class="route-card">
+                <div class="route-cities"><span>NBO</span><span class="route-arrow">→</span><span>JNB</span></div>
+                <p class="route-meta">Nairobi to Johannesburg · Regional connector</p>
+                <div class="route-price">KES 28,000 <span>from</span></div>
+            </article>
+            <article class="route-card">
+                <div class="route-cities"><span>NBO</span><span class="route-arrow">→</span><span>LHR</span></div>
+                <p class="route-meta">Nairobi to London · Long-haul flagship</p>
+                <div class="route-price">KES 95,000 <span>from</span></div>
+            </article>
+            <article class="route-card">
+                <div class="route-cities"><span>MBA</span><span class="route-arrow">→</span><span>ZNZ</span></div>
+                <p class="route-meta">Mombasa to Zanzibar · Island leisure</p>
+                <div class="route-price">KES 11,200 <span>from</span></div>
+            </article>
+            <article class="route-card">
+                <div class="route-cities"><span>NBO</span><span class="route-arrow">→</span><span>CDG</span></div>
+                <p class="route-meta">Nairobi to Paris · Continental premium</p>
+                <div class="route-price">KES 112,000 <span>from</span></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="classes">
+        <div class="wrap">
+            <div class="section-header">
+                <div>
+                    <p class="section-eyebrow">Elevate your journey</p>
+                    <h2 class="section-title">Choose your<br>Experience</h2>
+                </div>
+            </div>
+
+            <div class="classes-grid">
+                <article class="class-card">
+                    <h3 class="class-name">Economy</h3>
+                    <ul class="class-features">
+                        <li>23kg checked baggage</li>
+                        <li>Seat selection</li>
+                        <li>In-flight meals</li>
+                        <li>Entertainment system</li>
+                    </ul>
+                    <p class="class-from">Starting from</p>
+                    <div class="class-price">KES 8,500</div>
+                </article>
+
+                <article class="class-card">
+                    <h3 class="class-name">Premium Economy</h3>
+                    <ul class="class-features">
+                        <li>32kg checked baggage</li>
+                        <li>Priority boarding</li>
+                        <li>Extra legroom seats</li>
+                        <li>Premium dining</li>
+                    </ul>
+                    <p class="class-from">Starting from</p>
+                    <div class="class-price">KES 22,000</div>
+                </article>
+
+                <article class="class-card featured">
+                    <div class="class-badge">Most Popular</div>
+                    <h3 class="class-name">Business</h3>
+                    <ul class="class-features">
+                        <li>Lie-flat seats</li>
+                        <li>Lounge access</li>
+                        <li>40kg baggage</li>
+                        <li>Dedicated check-in</li>
+                        <li>Premium champagne</li>
+                    </ul>
+                    <p class="class-from">Starting from</p>
+                    <div class="class-price">KES 58,000</div>
+                </article>
+
+                <article class="class-card">
+                    <h3 class="class-name">First Class</h3>
+                    <ul class="class-features">
+                        <li>Private suites</li>
+                        <li>Chauffeur transfer</li>
+                        <li>Personal concierge</li>
+                        <li>Gourmet dining</li>
+                        <li>Bespoke amenity kit</li>
+                    </ul>
+                    <p class="class-from">Starting from</p>
+                    <div class="class-price">KES 185,000</div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="flights" class="wrap live-section">
+        <div class="section-header live-header">
+            <div>
+                <p class="section-eyebrow">Live inventory</p>
+                <h2 class="section-title">Available<br>Right Now</h2>
+            </div>
+            <p id="resultsMeta" class="section-copy">Published flights are loaded from the backend at runtime.</p>
+        </div>
+        <div id="flightList" class="flights"><div class="empty">Loading flights...</div></div>
+    </section>
+
+    <section id="bookings" class="wrap live-section">
+        <div class="section-header live-header">
+            <div>
+                <p class="section-eyebrow">Passenger workspace</p>
+                <h2 class="section-title">My<br>Bookings</h2>
+            </div>
+            <p class="section-copy">After passenger sign-in, your bookings load here automatically using your JWT token.</p>
+        </div>
+        <div id="bookingList" class="bookings"><div class="empty">Sign in as a passenger to load your bookings.</div></div>
+    </section>
+
+    <section class="wrap cta premium-cta">
+        <div>
+            <h2>Ready to launch the full experience?</h2>
+            <p class="sub">Passengers start here. Administrators remain protected behind the dedicated session-based portal.</p>
+        </div>
+        <div class="actions nav-actions">
+            <button class="btn primary" type="button" onclick="openModal('register')">Create passenger account</button>
+            <a class="btn ghost" href="/login">Open admin portal</a>
+        </div>
+    </section>
+    <div id="loginModal" class="overlay"><div class="modal"><button class="close" type="button" onclick="closeModal('login')">x</button><h3>Passenger sign in</h3><p>Use your passenger or agent account here. Admin dashboard access stays in the separate portal.</p><div id="loginMsg" class="msg"></div><div class="grid2"><div class="field full"><label for="loginUsername">Username</label><input id="loginUsername" type="text" placeholder="Enter username"></div><div class="field full"><label for="loginPassword">Password</label><input id="loginPassword" type="password" placeholder="Enter password"></div></div><div class="actions nav-actions"><button class="btn primary" type="button" onclick="doLogin()">Sign in</button><button class="btn ghost" type="button" onclick="switchModal('login','register')">Create account</button></div></div></div>
+    <div id="registerModal" class="overlay"><div class="modal"><button class="close" type="button" onclick="closeModal('register')">x</button><h3>Create passenger account</h3><p>Public signup is limited to passenger accounts for a cleaner and safer onboarding flow.</p><div id="registerMsg" class="msg"></div><div class="grid2"><div class="field"><label for="regUsername">Username</label><input id="regUsername" type="text" placeholder="Choose a username"></div><div class="field"><label for="regEmail">Email</label><input id="regEmail" type="email" placeholder="name@example.com"></div><div class="field full"><label for="regPassword">Password</label><input id="regPassword" type="password" placeholder="Minimum 8 characters"></div></div><div class="actions nav-actions"><button class="btn primary" type="button" onclick="doRegister()">Create account</button><button class="btn ghost" type="button" onclick="switchModal('register','login')">I already have an account</button></div></div></div>
+    <div id="bookingModal" class="overlay"><div class="modal"><button class="close" type="button" onclick="closeModal('booking')">x</button><h3>Complete your booking</h3><p>Booking requires a signed-in passenger account.</p><div id="bookingMsg" class="msg"></div><div class="grid2"><div class="field full"><label for="bookFlight">Flight</label><input id="bookFlight" type="text" readonly></div><div class="field"><label for="bookName">Passenger name</label><input id="bookName" type="text" placeholder="As shown on travel documents"></div><div class="field"><label for="bookSeat">Seat number</label><input id="bookSeat" type="text" placeholder="12A"></div><div class="field full"><label for="bookClass">Seat class</label><select id="bookClass"><option value="ECONOMY">Economy</option><option value="PREMIUM_ECONOMY">Premium Economy</option><option value="BUSINESS">Business</option><option value="FIRST_CLASS">First Class</option></select></div></div><div class="actions nav-actions"><button class="btn primary" type="button" onclick="submitBooking()">Confirm booking</button></div></div></div>
+    <div id="paymentModal" class="overlay"><div class="modal"><button class="close" type="button" onclick="closeModal('payment')">x</button><h3>Pay with card</h3><p>Complete payment securely with Stripe to issue your ticket instantly.</p><div id="paymentMsg" class="msg"></div><div id="paymentSummary" class="payment-summary"></div><div class="field full"><label for="cardholderName">Cardholder name</label><input id="cardholderName" type="text" placeholder="Name on card"></div><div class="stripe-shell"><div id="stripeElement" class="stripe-element"></div></div><div class="actions nav-actions"><button id="payNowBtn" class="btn primary" type="button" onclick="submitStripePayment()">Pay now</button><button class="btn ghost" type="button" onclick="closeModal('payment')">Pay later</button></div></div></div>
+    <div id="ticketModal" class="overlay"><div class="modal"><button class="close" type="button" onclick="closeModal('ticket')">x</button><h3>Your ticket is ready</h3><p>Payment is complete. Save or print this ticket for check-in.</p><div id="ticketMsg" class="msg"></div><div id="ticketPreview" class="ticket-preview"></div><div class="actions nav-actions"><button class="btn primary" type="button" onclick="downloadTicket()">Download ticket</button><button class="btn ghost" type="button" onclick="printTicket()">Print ticket</button></div></div></div>
+</main>
+</html>

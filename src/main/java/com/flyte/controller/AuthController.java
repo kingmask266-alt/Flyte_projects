@@ -30,17 +30,13 @@ public class AuthController {
 
     /**
      * POST /api/auth/register
-     * Register a new CUSTOMER account.
+     * Register a new PASSENGER account.
      */
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         User user = userService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body("User registered successfully: " + user.getUsername());
-    }
-    @GetMapping("/")
-    public String home() {
-        return "index";
     }
     /**
      * POST /api/auth/login
@@ -50,7 +46,7 @@ public class AuthController {
      * { "username": "john", "password": "password123" }
      *
      * Example response:
-     * { "token": "eyJ...", "username": "john", "role": "ROLE_CUSTOMER" }
+     * { "token": "eyJ...", "username": "john", "role": "ROLE_PASSENGER" }
      */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {

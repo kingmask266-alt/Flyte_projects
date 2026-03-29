@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 
 /**
- * Represents a flight booking made by a CUSTOMER.
+ * Represents a flight booking made by a PASSENGER.
  * Each booking is linked to one Flight and one User.
  */
 @Entity

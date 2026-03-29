@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Handles all booking operations for CUSTOMER users.
+ * Handles all booking operations for PASSENGER users.
  * Manages seat availability and price calculation.
  */
 @Service
@@ -26,7 +26,7 @@ public class BookingService {
     private final SeatPricingService seatPricingService;
 
     /**
-     * Book a flight for an authenticated CUSTOMER.
+     * Book a flight for an authenticated PASSENGER.
      * Validates seat availability, calculates price, and saves the booking.
      */
     @Transactional

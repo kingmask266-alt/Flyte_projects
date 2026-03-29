@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: page('Flyte Admin Dashboard', 'dashboard', 'overview', ~{::main})}">
+<main>
+    <section class="dashboard-summary">
+        <div class="hero-card">
+            <div class="hero-copy">
+                <p class="eyebrow">Operations snapshot</p>
+                <h1>Admin dashboard</h1>
+                <p class="sub">A cleaner operational view for flights and bookings without duplicating styles or navigation across templates.</p>
+            </div>
+            <div class="hero-badge">
+                <span class="pill">Protected route</span>
+                <p>Session login for admins, JWT flows for passengers.</p>
+            </div>
+        </div>
+        <div class="summary-grid">
+            <article class="summary-card">
+                <p>Total Flights</p>
+                <strong th:text="${totalFlights}">0</strong>
+            </article>
+            <article class="summary-card">
+                <p>Total Bookings</p>
+                <strong th:text="${totalBookings}">0</strong>
+            </article>
+            <article class="summary-card">
+                <p>Active Bookings</p>
+                <strong th:text="${confirmedBookings}">0</strong>
+            </article>
+            <article class="summary-card">
+                <p>Cancelled Bookings</p>
+                <strong th:text="${cancelledBookings}">0</strong>
+            </article>
+        </div>
+    </section>
+
+    <section class="dashboard-grid">
+        <article class="dashboard-panel" id="flights-table">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Flights</p>
+                    <h2>Published routes</h2>
+                </div>
+                <p class="note">Current flights exposed by the live application.</p>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Flight</th>
+                        <th>Route</th>
+                        <th>Departure</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="flight : ${flights}">
+                        <td th:text="${flight.flightNumber}">FL-100</td>
+                        <td th:text="${flight.origin + ' -> ' + flight.destination}">NBO -> MBA</td>
+                        <td th:text="${flight.departureTime}">2026-03-27T09:00</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(flights)}">
+                        <td colspan="3">No flights found.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="dashboard-panel" id="bookings-table">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Bookings</p>
+                    <h2>Passenger activity</h2>
+                </div>
+                <p class="note">Status reflects the persisted `cancelled` flag.</p>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Passenger</th>
+                        <th>Seat</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="booking : ${bookings}">
+                        <td th:text="${booking.passengerName}">Passenger</td>
+                        <td th:text="${booking.seatNumber}">12A</td>
+                        <td th:class="${booking.cancelled ? 'status-cancelled' : 'status-active'}"
+                            th:text="${booking.cancelled ? 'Cancelled' : 'Active'}">Active</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(bookings)}">
+                        <td colspan="3">No bookings found.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+</main>
+</html>

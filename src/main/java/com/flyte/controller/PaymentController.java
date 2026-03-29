@@ -2,12 +2,15 @@ package com.flyte.controller;
 
 import com.flyte.dto.MpesaRequest;
 import com.flyte.dto.MpesaStkResponse;
+import com.flyte.entity.Payment;
 import com.flyte.service.MpesaService;
 import com.flyte.service.StripeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -15,7 +18,7 @@ import java.util.Map;
 /**
  * Payment endpoints for Mpesa and Stripe.
  *
- * CUSTOMER:
+ * PASSENGER:
  *   POST /api/payments/mpesa/pay           → trigger Mpesa STK Push
  *   POST /api/payments/stripe/intent/{id}  → get Stripe client secret
  *
@@ -30,12 +33,18 @@ public class PaymentController {
     private final MpesaService mpesaService;
     private final StripeService stripeService;
 
+    @GetMapping("/stripe/config")
+    @PreAuthorize("hasRole('PASSENGER')")
+    public ResponseEntity<Map<String, String>> stripeConfig() {
+        return ResponseEntity.ok(Map.of("publishableKey", stripeService.getPublishableKey()));
+    }
+
     /**
      * Trigger an Mpesa STK Push to the customer's phone.
      * Customer will receive a prompt to enter their Mpesa PIN.
      */
     @PostMapping("/mpesa/pay")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasRole('PASSENGER')")
     public ResponseEntity<MpesaStkResponse> initiateMpesaPayment(@Valid @RequestBody MpesaRequest request) {
         MpesaStkResponse response = mpesaService.initiateStkPush(request);
         return ResponseEntity.ok(response);
@@ -56,10 +65,22 @@ public class PaymentController {
      * The frontend uses this to complete card payment via Stripe.js.
      */
     @PostMapping("/stripe/intent/{bookingId}")
-    @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<Map<String, String>> createStripePaymentIntent(@PathVariable Long bookingId) {
-        String clientSecret = stripeService.createPaymentIntent(bookingId);
+    @PreAuthorize("hasRole('PASSENGER')")
+    public ResponseEntity<Map<String, String>> createStripePaymentIntent(@PathVariable Long bookingId,
+                                                                         @AuthenticationPrincipal UserDetails userDetails) {
+        String clientSecret = stripeService.createPaymentIntent(bookingId, userDetails.getUsername());
         return ResponseEntity.ok(Map.of("clientSecret", clientSecret));
+    }
+
+    @PostMapping("/stripe/sync/{bookingId}")
+    @PreAuthorize("hasRole('PASSENGER')")
+    public ResponseEntity<Map<String, Object>> syncStripePayment(@PathVariable Long bookingId,
+                                                                 @AuthenticationPrincipal UserDetails userDetails) {
+        Payment payment = stripeService.syncPaymentStatus(bookingId, userDetails.getUsername());
+        return ResponseEntity.ok(Map.of(
+                "status", payment.getStatus().name(),
+                "transactionReference", payment.getTransactionReference()
+        ));
     }
 
     /**

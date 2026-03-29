@@ -9,7 +9,8 @@ import java.util.List;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-
+    long countByCancelledFalse();
+    long countByCancelledTrue();
     List<Booking> findByUserId(Long userId);
 
     List<Booking> findByFlightId(Long flightId);
