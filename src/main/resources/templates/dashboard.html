@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout :: page('Flyte Admin Dashboard', 'dashboard', 'overview', ~{::main})}">
 <main>
-    <section class="dashboard-summary">
+    <header class="dashboard-header dashboard-summary">
         <div class="hero-card">
             <div class="hero-copy">
                 <p class="eyebrow">Operations snapshot</p>
@@ -31,70 +31,291 @@
                 <p>Cancelled Bookings</p>
                 <strong th:text="${cancelledBookings}">0</strong>
             </article>
+            <article class="summary-card">
+                <p>Paid Revenue</p>
+                <strong th:text="'KES ' + ${#numbers.formatDecimal(paidRevenue, 1, 'COMMA', 0, 'POINT')}">KES 0</strong>
+            </article>
+            <article class="summary-card">
+                <p>Pending Payments</p>
+                <strong th:text="${pendingPayments}">0</strong>
+            </article>
         </div>
+    </header>
+
+    <div class="admin-section-intro">
+        <div>
+            <p class="eyebrow">Workspace</p>
+            <h2>Plan, publish, and monitor</h2>
+        </div>
+        <p class="note">The admin flow should move in one direction: create or update flights first, then review performance and booking activity underneath.</p>
+    </div>
+
+    <section class="admin-workbench">
+        <article class="dashboard-panel flight-form-panel" id="add-flight">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Flight ops</p>
+                    <h2>Add a route</h2>
+                </div>
+                <p class="note">Create flights from the admin workspace instead of calling the API manually.</p>
+            </div>
+
+            <div th:if="${successMessage}" class="message success" th:text="${successMessage}">Flight added successfully.</div>
+            <div th:if="${errorMessage}" class="message error" th:text="${errorMessage}">Could not add flight.</div>
+
+            <form class="admin-form-grid" th:action="@{/admin/flights}" th:object="${flightForm}" method="post">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="field">
+                    <label for="flightNumber">Flight number</label>
+                    <input id="flightNumber" type="text" th:field="*{flightNumber}" placeholder="FL-204" required>
+                </div>
+                <div class="field">
+                    <label for="availableSeats">Available seats</label>
+                    <input id="availableSeats" type="number" min="1" th:field="*{availableSeats}" placeholder="180" required>
+                </div>
+                <div class="field">
+                    <label for="origin">Origin</label>
+                    <input id="origin" type="text" th:field="*{origin}" placeholder="Nairobi" required>
+                </div>
+                <div class="field">
+                    <label for="destination">Destination</label>
+                    <input id="destination" type="text" th:field="*{destination}" placeholder="Mombasa" required>
+                </div>
+                <div class="field">
+                    <label for="departureTime">Departure</label>
+                    <input id="departureTime" type="datetime-local" th:field="*{departureTime}" required>
+                </div>
+                <div class="field">
+                    <label for="arrivalTime">Arrival</label>
+                    <input id="arrivalTime" type="datetime-local" th:field="*{arrivalTime}" required>
+                </div>
+                <div class="field full">
+                    <label for="baseFare">Base fare (KES)</label>
+                    <input id="baseFare" type="number" min="1" step="0.01" th:field="*{baseFare}" placeholder="8500" required>
+                </div>
+                <div class="admin-form-actions full">
+                    <p class="note">Use 24-hour local times. Cabin pricing still gets calculated later during booking.</p>
+                    <button class="btn primary" type="submit">Publish flight</button>
+                </div>
+            </form>
+        </article>
+
+        <article class="dashboard-panel admin-balance-panel">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Operations rhythm</p>
+                    <h2>Keep the page balanced</h2>
+                </div>
+                <p class="note">The admin view now pairs creation, monitoring, and navigation in one row.</p>
+            </div>
+
+            <div class="admin-balance-grid">
+                <div class="admin-balance-card">
+                    <span class="kicker">Published</span>
+                    <strong th:text="${totalFlights}">0</strong>
+                    <p>Flights currently visible to the public search flow.</p>
+                </div>
+                <div class="admin-balance-card">
+                    <span class="kicker">Confirmed</span>
+                    <strong th:text="${confirmedBookings}">0</strong>
+                    <p>Bookings still active and available for payment follow-up.</p>
+                </div>
+                <div class="admin-balance-card">
+                    <span class="kicker">Revenue</span>
+                    <strong th:text="'KES ' + ${#numbers.formatDecimal(totalRevenue, 1, 'COMMA', 0, 'POINT')}">KES 0</strong>
+                    <p>Total value of active bookings currently held in the system.</p>
+                </div>
+                <div class="admin-balance-card">
+                    <span class="kicker">Busiest route</span>
+                    <strong class="admin-route-text" th:text="${busiestRoute}">No active route data</strong>
+                    <p>Most-booked route across the current booking history.</p>
+                </div>
+            </div>
+
+            <div class="admin-quick-links">
+                <a class="btn ghost" th:href="@{/admin#flights-table}" href="/admin#flights-table">Review flights</a>
+                <a class="btn ghost" th:href="@{/admin#bookings-table}" href="/admin#bookings-table">Review bookings</a>
+                <a class="btn ghost" th:href="@{/admin#add-flight}" href="/admin#add-flight">Return to add form</a>
+            </div>
+
+            <div class="admin-note-block">
+                <p class="eyebrow">Workflow</p>
+                <p>Create the route, confirm it appears in the table, then monitor bookings from the panel below. This keeps the admin page from feeling lopsided around the add-flight task.</p>
+            </div>
+        </article>
     </section>
 
-    <section class="dashboard-grid">
-        <article class="dashboard-panel" id="flights-table">
+    <div class="admin-section-intro">
+        <div>
+            <p class="eyebrow">Operational Tables</p>
+            <h2>Live records</h2>
+        </div>
+        <p class="note">Detailed flight and booking records sit in their own band so they do not compete visually with the planning tools above.</p>
+    </div>
+
+    <section class="admin-full-width-section" id="flights-table">
+        <article class="dashboard-panel admin-full-width-panel">
             <div class="panel-head">
                 <div>
                     <p class="eyebrow">Flights</p>
                     <h2>Published routes</h2>
                 </div>
-                <p class="note">Current flights exposed by the live application.</p>
+                <p class="note">Current flights exposed by the live application, with departure, fare, and control actions.</p>
             </div>
             <div class="table-wrap">
-                <table>
+                <table class="admin-table">
                     <thead>
                     <tr>
                         <th>Flight</th>
                         <th>Route</th>
                         <th>Departure</th>
+                        <th>Fare</th>
+                        <th>Seats</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="flight : ${flights}">
-                        <td th:text="${flight.flightNumber}">FL-100</td>
-                        <td th:text="${flight.origin + ' -> ' + flight.destination}">NBO -> MBA</td>
-                        <td th:text="${flight.departureTime}">2026-03-27T09:00</td>
+                        <td>
+                            <div class="table-primary" th:text="${flight.flightNumber}">FL-100</div>
+                            <div class="table-secondary" th:text="${flight.createdAt != null ? #temporals.format(flight.createdAt, 'dd MMM yyyy, HH:mm') : 'Created recently'}">Created recently</div>
+                        </td>
+                        <td>
+                            <div class="table-primary" th:text="${flight.origin + ' -> ' + flight.destination}">NBO -> MBA</div>
+                            <div class="table-secondary">Published route</div>
+                        </td>
+                        <td>
+                            <div class="table-primary" th:text="${flight.departureTime != null ? #temporals.format(flight.departureTime, 'dd MMM yyyy, HH:mm') : 'Pending'}">2026-03-27 09:00</div>
+                            <div class="table-secondary" th:text="${flight.arrivalTime != null ? 'Arrives ' + #temporals.format(flight.arrivalTime, 'dd MMM yyyy, HH:mm') : 'Arrival pending'}">Arrives 2026-03-27 10:00</div>
+                        </td>
+                        <td th:text="'KES ' + ${#numbers.formatDecimal(flight.baseFare, 1, 'COMMA', 0, 'POINT')}">KES 8,500</td>
+                        <td>
+                            <span class="table-badge" th:text="${flight.availableSeats + ' seats'}">180 seats</span>
+                        </td>
+                        <td>
+                            <form th:action="@{/admin/flights/{id}/delete(id=${flight.id})}" method="post">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button class="btn ghost btn-danger" type="submit">Remove</button>
+                            </form>
+                        </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(flights)}">
-                        <td colspan="3">No flights found.</td>
+                        <td colspan="6">No flights found.</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
         </article>
+    </section>
 
-        <article class="dashboard-panel" id="bookings-table">
+    <section class="admin-full-width-section" id="bookings-table">
+        <article class="dashboard-panel admin-full-width-panel">
             <div class="panel-head">
                 <div>
                     <p class="eyebrow">Bookings</p>
                     <h2>Passenger activity</h2>
                 </div>
-                <p class="note">Status reflects the persisted `cancelled` flag.</p>
+                <p class="note">Booking status, seat details, and payment state are visible in one place.</p>
             </div>
             <div class="table-wrap">
-                <table>
+                <table class="admin-table">
                     <thead>
                     <tr>
                         <th>Passenger</th>
+                        <th>Flight</th>
                         <th>Seat</th>
                         <th>Status</th>
+                        <th>Payment</th>
+                        <th>Value</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="booking : ${bookings}">
-                        <td th:text="${booking.passengerName}">Passenger</td>
-                        <td th:text="${booking.seatNumber}">12A</td>
-                        <td th:class="${booking.cancelled ? 'status-cancelled' : 'status-active'}"
-                            th:text="${booking.cancelled ? 'Cancelled' : 'Active'}">Active</td>
+                        <td>
+                            <div class="table-primary" th:text="${booking.passengerName}">Passenger</div>
+                            <div class="table-secondary" th:text="${booking.bookedAt != null ? #temporals.format(booking.bookedAt, 'dd MMM yyyy, HH:mm') : 'Booked recently'}">Booked recently</div>
+                        </td>
+                        <td>
+                            <div class="table-primary" th:text="${booking.flight.flightNumber}">FL-100</div>
+                            <div class="table-secondary" th:text="${booking.flight.origin + ' -> ' + booking.flight.destination}">NBO -> MBA</div>
+                        </td>
+                        <td>
+                            <div class="table-primary" th:text="${booking.seatNumber}">12A</div>
+                            <div class="table-secondary" th:text="${#strings.replace(booking.seatClass.name(), '_', ' ')}">BUSINESS</div>
+                        </td>
+                        <td>
+                            <span th:class="${booking.cancelled ? 'table-badge badge-cancelled' : 'table-badge badge-active'}"
+                                  th:text="${booking.cancelled ? 'Cancelled' : 'Active'}">Active</span>
+                        </td>
+                        <td>
+                            <th:block th:with="payment=${paymentByBookingId[booking.id]}">
+                                <span th:if="${payment != null}"
+                                      th:class="|table-badge badge-${#strings.toLowerCase(payment.status.name())}|"
+                                      th:text="${payment.paymentMethod.name() + ' · ' + payment.status.name()}">MPESA · SUCCESS</span>
+                                <span th:if="${payment == null}" class="table-badge badge-muted">Unpaid</span>
+                            </th:block>
+                        </td>
+                        <td th:text="'KES ' + ${#numbers.formatDecimal(booking.price, 1, 'COMMA', 0, 'POINT')}">KES 0</td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(bookings)}">
-                        <td colspan="3">No bookings found.</td>
+                        <td colspan="6">No bookings found.</td>
                     </tr>
                     </tbody>
                 </table>
+            </div>
+        </article>
+    </section>
+
+    <div class="admin-section-intro">
+        <div>
+            <p class="eyebrow">Signals</p>
+            <h2>What needs attention next</h2>
+        </div>
+        <p class="note">Departures and payment activity are separated into a lighter monitoring section instead of being packed into the primary control area.</p>
+    </div>
+
+    <section class="admin-bottom-grid">
+        <article class="dashboard-panel">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Upcoming departures</p>
+                    <h2>Leaving soon</h2>
+                </div>
+                <p class="note"><span th:text="${flightsDepartingSoon}">0</span> flights are next in the live departure queue.</p>
+            </div>
+            <div class="admin-stack-list">
+                <div class="admin-stack-item" th:each="flight : ${upcomingFlights}">
+                    <div>
+                        <div class="table-primary" th:text="${flight.flightNumber + ' · ' + flight.origin + ' -> ' + flight.destination}">FL-204 · NBO -> MBA</div>
+                        <div class="table-secondary" th:text="${#temporals.format(flight.departureTime, 'dd MMM yyyy, HH:mm')}">31 Mar 2026, 08:00</div>
+                    </div>
+                    <span class="table-badge" th:text="${flight.availableSeats + ' seats left'}">24 seats left</span>
+                </div>
+                <div th:if="${#lists.isEmpty(upcomingFlights)}" class="empty compact-empty">No upcoming departures scheduled yet.</div>
+            </div>
+        </article>
+
+        <article class="dashboard-panel">
+            <div class="panel-head">
+                <div>
+                    <p class="eyebrow">Recent payments</p>
+                    <h2>Cashflow view</h2>
+                </div>
+                <p class="note">Latest transaction records across M-Pesa and Stripe.</p>
+            </div>
+            <div class="admin-stack-list">
+                <div class="admin-stack-item" th:each="payment : ${recentPayments}">
+                    <div>
+                        <div class="table-primary" th:text="${payment.paymentMethod.name() + ' · Booking #' + payment.booking.id}">MPESA · Booking #14</div>
+                        <div class="table-secondary" th:text="${payment.createdAt != null ? #temporals.format(payment.createdAt, 'dd MMM yyyy, HH:mm') : 'Recorded recently'}">Recorded recently</div>
+                    </div>
+                    <div class="admin-payment-meta">
+                        <span th:class="|table-badge badge-${#strings.toLowerCase(payment.status.name())}|"
+                              th:text="${payment.status.name()}">SUCCESS</span>
+                        <strong th:text="'KES ' + ${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 0, 'POINT')}">KES 0</strong>
+                    </div>
+                </div>
+                <div th:if="${#lists.isEmpty(recentPayments)}" class="empty compact-empty">No payments have been recorded yet.</div>
             </div>
         </article>
     </section>

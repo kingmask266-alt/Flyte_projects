@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="landingModals">
+    <div id="loginModal" class="overlay">
+        <div class="modal">
+            <button class="close" type="button" data-action="close-modal" data-modal="login">x</button>
+            <h3>Passenger sign in</h3>
+            <p>Use your passenger or agent account here. Admin dashboard access stays in the separate portal.</p>
+            <div id="loginMsg" class="msg"></div>
+            <form id="loginForm">
+                <div class="grid2">
+                    <div class="field full">
+                        <label for="loginUsername">Username</label>
+                        <input id="loginUsername" type="text" placeholder="Enter username">
+                    </div>
+                    <div class="field full">
+                        <label for="loginPassword">Password</label>
+                        <input id="loginPassword" type="password" placeholder="Enter password">
+                    </div>
+                </div>
+                <div class="actions nav-actions">
+                    <button class="btn primary" type="submit">Sign in</button>
+                    <button class="btn ghost" type="button" data-action="switch-modal" data-current-modal="login" data-next-modal="register">Create account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="registerModal" class="overlay">
+        <div class="modal">
+            <button class="close" type="button" data-action="close-modal" data-modal="register">x</button>
+            <h3>Create passenger account</h3>
+            <p>Public signup is limited to passenger accounts for a cleaner and safer onboarding flow.</p>
+            <div id="registerMsg" class="msg"></div>
+            <form id="registerForm">
+                <div class="grid2">
+                    <div class="field">
+                        <label for="regUsername">Username</label>
+                        <input id="regUsername" type="text" placeholder="Choose a username">
+                    </div>
+                    <div class="field">
+                        <label for="regEmail">Email</label>
+                        <input id="regEmail" type="email" placeholder="name@example.com">
+                    </div>
+                    <div class="field full">
+                        <label for="regPassword">Password</label>
+                        <input id="regPassword" type="password" placeholder="Minimum 8 characters">
+                    </div>
+                </div>
+                <div class="actions nav-actions">
+                    <button class="btn primary" type="submit">Create account</button>
+                    <button class="btn ghost" type="button" data-action="switch-modal" data-current-modal="register" data-next-modal="login">I already have an account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="bookingModal" class="overlay">
+        <div class="modal">
+            <button class="close" type="button" data-action="close-modal" data-modal="booking">x</button>
+            <h3>Complete your booking</h3>
+            <p>Booking requires a signed-in passenger account.</p>
+            <div id="bookingMsg" class="msg"></div>
+            <form id="bookingForm">
+                <div class="grid2">
+                    <div class="field full">
+                        <label for="bookFlight">Flight</label>
+                        <input id="bookFlight" type="text" readonly>
+                    </div>
+                    <div class="field">
+                        <label for="bookName">Passenger name</label>
+                        <input id="bookName" type="text" placeholder="As shown on travel documents">
+                    </div>
+                    <div class="field">
+                        <label for="bookSeat">Seat number</label>
+                        <input id="bookSeat" type="text" placeholder="12A">
+                    </div>
+                    <div class="field full">
+                        <label for="bookClass">Seat class</label>
+                        <select id="bookClass">
+                            <option value="ECONOMY">Economy</option>
+                            <option value="PREMIUM_ECONOMY">Premium Economy</option>
+                            <option value="BUSINESS">Business</option>
+                            <option value="FIRST_CLASS">First Class</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="actions nav-actions">
+                    <button class="btn primary" type="submit">Confirm booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="paymentModal" class="overlay">
+        <div class="modal">
+            <button class="close" type="button" data-action="close-modal" data-modal="payment">x</button>
+            <h3>Complete payment</h3>
+            <p>Mpesa is the default method. You can switch to card payment anytime.</p>
+            <div id="paymentMsg" class="msg"></div>
+            <div id="paymentSummary" class="payment-summary"></div>
+            <div class="actions nav-actions">
+                <button id="mpesaTab" class="btn primary active" type="button" data-action="switch-payment-method" data-method="MPESA">Mpesa</button>
+                <button id="stripeTab" class="btn ghost" type="button" data-action="switch-payment-method" data-method="STRIPE">Card (Stripe)</button>
+            </div>
+            <div id="mpesaPanel">
+                <form id="mpesaForm">
+                    <div class="field full">
+                        <label for="mpesaPhone">Mpesa phone number</label>
+                        <input id="mpesaPhone" type="tel" placeholder="0712345678">
+                    </div>
+                    <div class="actions nav-actions">
+                        <button id="mpesaPayBtn" class="btn primary" type="submit">Pay with Mpesa</button>
+                        <button class="btn ghost" type="button" data-action="close-modal" data-modal="payment">Pay later</button>
+                    </div>
+                </form>
+                <div id="mpesaMsg" class="msg"></div>
+            </div>
+            <div id="stripePanel" style="display:none;">
+                <form id="stripeForm">
+                    <div class="field full">
+                        <label for="cardholderName">Cardholder name</label>
+                        <input id="cardholderName" type="text" placeholder="Name on card">
+                    </div>
+                    <div class="stripe-shell">
+                        <div id="stripeElement" class="stripe-element"></div>
+                    </div>
+                    <div class="actions nav-actions">
+                        <button id="payNowBtn" class="btn primary" type="submit">Pay with card</button>
+                        <button class="btn ghost" type="button" data-action="close-modal" data-modal="payment">Pay later</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="ticketModal" class="overlay">
+        <div class="modal">
+            <button class="close" type="button" data-action="close-modal" data-modal="ticket">x</button>
+            <h3>Your ticket is ready</h3>
+            <p>Payment is complete. Save or print this ticket for check-in.</p>
+            <div id="ticketMsg" class="msg"></div>
+            <div id="ticketPreview" class="ticket-preview"></div>
+            <div class="actions nav-actions">
+                <button class="btn primary" type="button" data-action="download-ticket">Download ticket</button>
+                <button class="btn ghost" type="button" data-action="print-ticket">Print ticket</button>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

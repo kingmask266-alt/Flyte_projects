@@ -4,10 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Flyte</title>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem("flyte_theme");
+                var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+                var theme = saved || (prefersDark ? "dark" : "light");
+                document.documentElement.setAttribute("data-theme", theme);
+            } catch (e) {
+                document.documentElement.setAttribute("data-theme", "dark");
+            }
+        }());
+    </script>
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<body th:class="${pageName == 'dashboard'} ? 'dashboard-page' : 'landing-page'">
+<body th:class="${pageName == 'dashboard' or pageName == 'login'} ? 'dashboard-page' : 'landing-page'">
+<div class="scroll-progress" aria-hidden="true"><span id="scrollProgressBar" class="scroll-progress-bar"></span></div>
 <th:block th:if="${pageName == 'dashboard'}">
     <div class="dashboard-shell">
         <aside th:replace="~{fragments/sidebar :: adminSidebar(${activeNav})}"></aside>
@@ -23,7 +38,7 @@
         <main th:replace="${content}"></main>
         <footer class="wrap site-footer">
             <div class="brand">Fly<span>te</span></div>
-            <div>Spring Boot · Security · MySQL · JWT</div>
+            <div>Class · Security · Affordability</div>
             <div>© 2026 Flyte</div>
         </footer>
     </div>

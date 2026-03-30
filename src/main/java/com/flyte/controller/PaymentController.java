@@ -34,7 +34,7 @@ public class PaymentController {
     private final StripeService stripeService;
 
     @GetMapping("/stripe/config")
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasAuthority('ROLE_PASSENGER')")
     public ResponseEntity<Map<String, String>> stripeConfig() {
         return ResponseEntity.ok(Map.of("publishableKey", stripeService.getPublishableKey()));
     }
@@ -44,7 +44,7 @@ public class PaymentController {
      * Customer will receive a prompt to enter their Mpesa PIN.
      */
     @PostMapping("/mpesa/pay")
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasAuthority('ROLE_PASSENGER')")
     public ResponseEntity<MpesaStkResponse> initiateMpesaPayment(@Valid @RequestBody MpesaRequest request) {
         MpesaStkResponse response = mpesaService.initiateStkPush(request);
         return ResponseEntity.ok(response);
@@ -65,7 +65,7 @@ public class PaymentController {
      * The frontend uses this to complete card payment via Stripe.js.
      */
     @PostMapping("/stripe/intent/{bookingId}")
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasAuthority('ROLE_PASSENGER')")
     public ResponseEntity<Map<String, String>> createStripePaymentIntent(@PathVariable Long bookingId,
                                                                          @AuthenticationPrincipal UserDetails userDetails) {
         String clientSecret = stripeService.createPaymentIntent(bookingId, userDetails.getUsername());
@@ -73,7 +73,7 @@ public class PaymentController {
     }
 
     @PostMapping("/stripe/sync/{bookingId}")
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasAuthority('ROLE_PASSENGER')")
     public ResponseEntity<Map<String, Object>> syncStripePayment(@PathVariable Long bookingId,
                                                                  @AuthenticationPrincipal UserDetails userDetails) {
         Payment payment = stripeService.syncPaymentStatus(bookingId, userDetails.getUsername());

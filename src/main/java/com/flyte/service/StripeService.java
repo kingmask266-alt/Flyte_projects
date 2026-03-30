@@ -16,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 /**
  * Handles Stripe card payment processing.
@@ -42,9 +45,13 @@ public class StripeService {
 
     @PostConstruct
     public void init() {
-        Stripe.apiKey = stripeSecretKey;
+        if (stripeSecretKey != null && !stripeSecretKey.isBlank()) {
+            Stripe.apiKey = stripeSecretKey;
+            log.info("Stripe initialized successfully.");
+        } else {
+            log.warn("Stripe secret key not configured — card payments disabled.");
+        }
     }
-
     /**
      * Creates a Stripe PaymentIntent for a booking.
      * Returns the client_secret to be used by the frontend.
@@ -56,6 +63,7 @@ public class StripeService {
         return createPaymentIntent(bookingId, null);
     }
 
+    @Transactional
     public String createPaymentIntent(Long bookingId, String username) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
@@ -65,26 +73,36 @@ public class StripeService {
         }
 
         try {
-            // Stripe amounts are in smallest currency unit (cents for USD, or fill in for KES)
-            long amountInCents = (long) (booking.getPrice() * 100);
+            // Stripe amounts are in currency unit (cents for USD, or fill in for KES)
+            long amountInCents = (long) ((booking.getPrice() /130.0)* 100);
+
+            if (amountInCents <= 0) {
+                throw new IllegalArgumentException("Booking amount must be greater than zero.");
+            }
 
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(amountInCents)
-                    .setCurrency("kes") // Kenyan Shilling — change to "usd" if needed
+                    .setCurrency("usd")
                     .setDescription("Flyte booking #" + bookingId + " - " + booking.getPassengerName())
                     .putMetadata("bookingId", String.valueOf(bookingId))
                     .build();
 
             PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-            // Save pending payment record
-            Payment payment = Payment.builder()
-                    .booking(booking)
-                    .amount(booking.getPrice())
-                    .paymentMethod(PaymentMethod.STRIPE)
-                    .status(PaymentStatus.PENDING)
-                    .transactionReference(paymentIntent.getId())
-                    .build();
+            Optional<Payment> existingPayment = paymentRepository.findByBookingId(bookingId);
+            Payment payment = existingPayment.orElseGet(Payment::new);
+
+            if (existingPayment.isPresent() && payment.getStatus() == PaymentStatus.SUCCESS) {
+                throw new IllegalStateException("This booking has already been paid.");
+            }
+
+            // Upsert payment record so retries do not violate one-to-one booking constraints.
+            payment.setBooking(booking);
+            payment.setAmount(booking.getPrice());
+            payment.setPaymentMethod(PaymentMethod.STRIPE);
+            payment.setStatus(PaymentStatus.PENDING);
+            payment.setTransactionReference(paymentIntent.getId());
+            payment.setMpesaPhone(null);
 
             paymentRepository.save(payment);
             log.info("Stripe PaymentIntent created: {} for booking {}", paymentIntent.getId(), bookingId);
@@ -108,6 +126,7 @@ public class StripeService {
      * @param paymentIntentId from Stripe webhook event
      * @param succeeded       true if payment succeeded, false if failed
      */
+    @Transactional
     public void confirmPayment(String paymentIntentId, boolean succeeded) {
         Payment payment = paymentRepository.findByTransactionReference(paymentIntentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentIntentId));
@@ -118,6 +137,7 @@ public class StripeService {
         log.info("Stripe payment {} → status: {}", paymentIntentId, payment.getStatus());
     }
 
+    @Transactional
     public Payment syncPaymentStatus(Long bookingId, String username) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));

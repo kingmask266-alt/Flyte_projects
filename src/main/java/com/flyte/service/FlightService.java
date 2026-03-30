@@ -48,6 +48,7 @@ public class FlightService {
     /**
      * Get all flights (public).
      */
+    @Transactional(readOnly = true)
     public List<Flight> getAllFlights() {
         return flightRepository.findAll();
     }
@@ -55,6 +56,7 @@ public class FlightService {
     /**
      * Get a flight by ID (public).
      */
+    @Transactional(readOnly = true)
     public Flight getFlightById(Long id) {
         return flightRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Flight not found with ID: " + id));
@@ -63,6 +65,7 @@ public class FlightService {
     /**
      * Get a flight by flight number (public).
      */
+    @Transactional(readOnly = true)
     public Flight getFlightByNumber(String flightNumber) {
         return flightRepository.findByFlightNumber(flightNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Flight not found: " + flightNumber));
@@ -71,6 +74,7 @@ public class FlightService {
     /**
      * Search available flights by route and date range (public).
      */
+    @Transactional(readOnly = true)
     public List<Flight> searchFlights(String origin, String destination,
                                       LocalDateTime from, LocalDateTime to) {
         return flightRepository.searchAvailableFlights(origin, destination, from, to);

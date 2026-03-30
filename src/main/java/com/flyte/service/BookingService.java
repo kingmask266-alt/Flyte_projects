@@ -10,12 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Handles all booking operations for PASSENGER users.
- * Manages seat availability and price calculation.
- */
 @Service
 @RequiredArgsConstructor
 public class BookingService {
@@ -25,10 +22,6 @@ public class BookingService {
     private final UserService userService;
     private final SeatPricingService seatPricingService;
 
-    /**
-     * Book a flight for an authenticated PASSENGER.
-     * Validates seat availability, calculates price, and saves the booking.
-     */
     @Transactional
     public Booking bookFlight(BookingRequest request, String username) {
         Flight flight = flightService.getFlightByNumber(request.getFlightNumber());
@@ -54,16 +47,10 @@ public class BookingService {
                 .cancelled(false)
                 .build();
 
-        // Reduce available seats
         flight.setAvailableSeats(flight.getAvailableSeats() - 1);
-
         return bookingRepository.save(booking);
     }
 
-    /**
-     * Cancel a booking by ID.
-     * Only the booking owner can cancel their booking.
-     */
     @Transactional
     public Booking cancelBooking(Long bookingId, String username) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -77,26 +64,34 @@ public class BookingService {
             throw new IllegalStateException("Booking is already cancelled.");
         }
 
+        if (booking.getFlight().getDepartureTime().isBefore(LocalDateTime.now().plusHours(2))) {
+            throw new IllegalStateException("Cannot cancel a flight departing in less than 2 hours.");
+        }
+
         booking.setCancelled(true);
-
-        // Restore the seat
         booking.getFlight().setAvailableSeats(booking.getFlight().getAvailableSeats() + 1);
-
         return bookingRepository.save(booking);
     }
 
-    /**
-     * Get all bookings for the currently logged-in user.
-     */
+    @Transactional(readOnly = true)
     public List<Booking> getMyBookings(String username) {
         User user = userService.findByUsername(username);
         return bookingRepository.findByUserId(user.getId());
     }
 
-    /**
-     * Get all bookings across all flights (ADMIN only).
-     */
+    @Transactional(readOnly = true)
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public Booking getBookingById(Long bookingId, String username) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+
+        if (!booking.getUser().getUsername().equals(username)) {
+            throw new SecurityException("Access denied to booking: " + bookingId);
+        }
+        return booking;
     }
 }

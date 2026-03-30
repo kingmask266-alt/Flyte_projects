@@ -3,13 +3,14 @@
 <body>
 <aside th:fragment="adminSidebar(activeNav)" class="sidebar">
     <div class="sidebar-brand">
-        <a class="brand" href="/admin">Fly<span>te</span></a>
+        <a class="brand" th:href="@{/admin}" href="/admin">Fly<span>te</span></a>
         <p>Control surface for the booking platform.</p>
     </div>
     <nav class="sidebar-nav">
-        <a th:classappend="${activeNav == 'overview'} ? ' active'" href="/admin">Overview</a>
-        <a href="#flights-table">Flights</a>
-        <a href="#bookings-table">Bookings</a>
+        <a th:classappend="${activeNav == 'overview'} ? ' active'" th:href="@{/admin}" href="/admin">Overview</a>
+        <a th:href="@{/admin#add-flight}" href="/admin#add-flight">Add Flight</a>
+        <a th:href="@{/admin#flights-table}" href="/admin#flights-table">Flights</a>
+        <a th:href="@{/admin#bookings-table}" href="/admin#bookings-table">Bookings</a>
     </nav>
     <div class="sidebar-note">
         <p class="eyebrow">Admin access</p>

@@ -2,16 +2,21 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <nav th:fragment="publicNavbar(activeNav)" class="site-nav">
-    <a class="logo" href="#top">Fly<span>te</span></a>
-    <ul class="nav-links">
-        <li><a th:classappend="${activeNav == 'discover'} ? ' active'" href="#discover">Routes</a></li>
-        <li><a th:classappend="${activeNav == 'flights'} ? ' active'" href="#flights">Live Flights</a></li>
-        <li><a th:classappend="${activeNav == 'bookings'} ? ' active'" href="#bookings">My Bookings</a></li>
-    </ul>
-    <div id="navActions" class="actions nav-actions">
-        <button class="btn ghost" type="button" onclick="openModal('login')">Passenger Sign In</button>
-        <a class="btn ghost" href="/login">Admin Portal</a>
-        <button class="btn primary" type="button" onclick="openModal('register')">Create Account</button>
+    <a class="logo" th:href="@{/#top}" href="#top">Fly<span>te</span></a>
+    <div class="nav-right">
+        <ul class="nav-links">
+            <li><a th:classappend="${activeNav == 'discover'} ? ' active'" th:href="@{/#discover}" href="#discover">Routes</a></li>
+            <li><a th:classappend="${activeNav == 'flights'} ? ' active'" th:href="@{/#flights}" href="#flights">Live Flights</a></li>
+            <li><a th:classappend="${activeNav == 'bookings'} ? ' active'" th:href="@{/#bookings}" href="#bookings">My Bookings</a></li>
+        </ul>
+        <button class="btn ghost theme-toggle" type="button" data-action="toggle-theme">
+            <span data-theme-toggle-label>Light Mode</span>
+        </button>
+        <div id="navActions" class="actions nav-actions">
+            <button class="btn ghost" type="button" data-action="open-modal" data-modal="login">Passenger Sign In</button>
+            <a class="btn ghost" th:href="@{/login}" href="/login">Admin Portal</a>
+            <button class="btn primary" type="button" data-action="open-modal" data-modal="register">Create Account</button>
+        </div>
     </div>
 </nav>
 
@@ -21,8 +26,12 @@
         <h2 th:text="${pageTitle}">Flyte Admin Dashboard</h2>
     </div>
     <div class="actions nav-actions">
-        <a class="btn ghost" href="/">Homepage</a>
+        <button class="btn ghost theme-toggle" type="button" data-action="toggle-theme">
+            <span data-theme-toggle-label>Light Mode</span>
+        </button>
+        <a class="btn ghost" th:href="@{/}" href="/">Homepage</a>
         <form th:action="@{/logout}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <button class="btn primary" type="submit">Log Out</button>
         </form>
     </div>

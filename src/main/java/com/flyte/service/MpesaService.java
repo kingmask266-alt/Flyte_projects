@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -109,6 +111,7 @@ public class MpesaService {
      *
      * @param request contains bookingId and phone number
      */
+    @Transactional
     public MpesaStkResponse initiateStkPush(MpesaRequest request) {
         Booking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + request.getBookingId()));
@@ -144,15 +147,20 @@ public class MpesaService {
                 .bodyToMono(MpesaStkResponse.class)
                 .block();
 
-        // Save a PENDING payment record
-        Payment payment = Payment.builder()
-                .booking(booking)
-                .amount(booking.getPrice())
-                .paymentMethod(PaymentMethod.MPESA)
-                .status(PaymentStatus.PENDING)
-                .transactionReference(stkResponse != null ? stkResponse.getCheckoutRequestId() : null)
-                .mpesaPhone(request.getPhoneNumber())
-                .build();
+        Optional<Payment> existingPayment = paymentRepository.findByBookingId(booking.getId());
+        Payment payment = existingPayment.orElseGet(Payment::new);
+
+        if (existingPayment.isPresent() && payment.getStatus() == PaymentStatus.SUCCESS) {
+            throw new IllegalStateException("This booking has already been paid.");
+        }
+
+        // Upsert payment record so retries do not violate one-to-one booking constraints.
+        payment.setBooking(booking);
+        payment.setAmount(booking.getPrice());
+        payment.setPaymentMethod(PaymentMethod.MPESA);
+        payment.setStatus(PaymentStatus.PENDING);
+        payment.setTransactionReference(stkResponse != null ? stkResponse.getCheckoutRequestId() : null);
+        payment.setMpesaPhone(request.getPhoneNumber());
 
         paymentRepository.save(payment);
         log.info("Mpesa STK Push initiated for booking {} - phone {}", booking.getId(), request.getPhoneNumber());
@@ -164,6 +172,7 @@ public class MpesaService {
      * Step 3: Handle Safaricom callback after customer pays.
      * Safaricom POSTs to /api/payments/mpesa/callback.
      */
+    @Transactional
     public void handleCallback(Map<String, Object> callbackPayload) {
         try {
             Map<?, ?> body = (Map<?, ?>) callbackPayload.get("Body");

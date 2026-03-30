@@ -33,7 +33,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasAuthority('ROLE_PASSENGER')")
     public ResponseEntity<Booking> bookFlight(@Valid @RequestBody BookingRequest request,
                                                @AuthenticationPrincipal UserDetails userDetails) {
         Booking booking = bookingService.bookFlight(request, userDetails.getUsername());
@@ -41,7 +41,7 @@ public class BookingController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasAuthority('ROLE_PASSENGER')")
     public ResponseEntity<Booking> cancelBooking(@PathVariable Long id,
                                                   @AuthenticationPrincipal UserDetails userDetails) {
         Booking booking = bookingService.cancelBooking(id, userDetails.getUsername());
@@ -49,7 +49,7 @@ public class BookingController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasRole('PASSENGER')")
+    @PreAuthorize("hasAuthority('ROLE_PASSENGER')")
     public ResponseEntity<List<Booking>> getMyBookings(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(bookingService.getMyBookings(userDetails.getUsername()));
     }

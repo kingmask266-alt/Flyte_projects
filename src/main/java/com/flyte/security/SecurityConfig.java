@@ -1,6 +1,7 @@
 package com.flyte.security;
 
-import com.flyte.service.UserService;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -12,15 +13,15 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import com.flyte.service.UserService;
 
 @Configuration
 @EnableWebSecurity
@@ -37,10 +38,14 @@ public class SecurityConfig {
         this.passwordEncoder = passwordEncoder;
     }
 
+    // Added public modifier for clarity and Spring framework accessibility
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/payments/mpesa/callback", "/api/payments/stripe/webhook")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -67,8 +72,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/bookings/my").hasAuthority("ROLE_PASSENGER")
                         .requestMatchers(HttpMethod.POST, "/api/bookings").hasAuthority("ROLE_PASSENGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/bookings/**").hasAuthority("ROLE_PASSENGER")
-                        .requestMatchers("/api/payments/stripe/**").hasRole("PASSENGER")
-                        .requestMatchers("/api/payments/mpesa/pay").hasRole("PASSENGER")
+                        .requestMatchers("/api/payments/stripe/**").hasAuthority("ROLE_PASSENGER")
+                        .requestMatchers("/api/payments/mpesa/pay").hasAuthority("ROLE_PASSENGER")
+                        .requestMatchers("/payment/**").hasAuthority("ROLE_PASSENGER")
                         .requestMatchers(HttpMethod.POST, "/api/flights/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/flights/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -88,6 +94,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Added public modifier for clarity and Spring framework accessibility
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -101,6 +108,7 @@ public class SecurityConfig {
         return source;
     }
 
+    // Added public modifier for clarity and Spring framework accessibility
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -109,6 +117,7 @@ public class SecurityConfig {
         return provider;
     }
 
+    // Added public modifier for clarity and Spring framework accessibility
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();

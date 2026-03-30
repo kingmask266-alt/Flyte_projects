@@ -1,6 +1,3 @@
-// =============================================
-// FILE 1: FlightRepository.java
-// =============================================
 package com.flyte.repository;
 
 import com.flyte.entity.Flight;

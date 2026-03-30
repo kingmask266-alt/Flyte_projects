@@ -2,6 +2,7 @@
     const API = "";
     const storeKey = "flyte_token";
     const userKey = "flyte_user";
+    const themeKey = "flyte_theme";
 
     let token = localStorage.getItem(storeKey);
     let currentUser = JSON.parse(localStorage.getItem(userKey) || "null");
@@ -9,11 +10,107 @@
     let stripePromise = null;
     let stripeClient = null;
     let stripeElements = null;
+    let stripeCardElement = null;
+    let stripeClientSecret = null;
+    let stripeReadyForBookingId = null;
     let activeBooking = null;
     let activeTicket = null;
+    let activePaymentMethod = "MPESA";
 
     const byId = (id) => document.getElementById(id);
     const hasHomePage = () => Boolean(byId("flightList"));
+
+    function csrfHeaderName() {
+        const meta = document.querySelector('meta[name="_csrf_header"]');
+        return meta ? meta.getAttribute("content") : "X-XSRF-TOKEN";
+    }
+
+    function csrfToken() {
+        const meta = document.querySelector('meta[name="_csrf"]');
+        if (meta && meta.getAttribute("content")) {
+            return meta.getAttribute("content");
+        }
+
+        const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : "";
+    }
+
+    function withCsrf(headers) {
+        const tokenValue = csrfToken();
+        if (!tokenValue) {
+            return headers || {};
+        }
+
+        return {
+            ...(headers || {}),
+            [csrfHeaderName()]: tokenValue
+        };
+    }
+
+    function refreshThemeToggleLabels(theme) {
+        document.querySelectorAll("[data-theme-toggle-label]").forEach((node) => {
+            node.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
+        });
+    }
+
+    function applyTheme(theme) {
+        const resolved = theme === "light" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", resolved);
+        refreshThemeToggleLabels(resolved);
+    }
+
+    function initTheme() {
+        let theme = "dark";
+        try {
+            const saved = localStorage.getItem(themeKey);
+            if (saved === "light" || saved === "dark") {
+                theme = saved;
+            } else if (window.matchMedia && !window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                theme = "light";
+            }
+        } catch (error) {
+            theme = "dark";
+        }
+        applyTheme(theme);
+    }
+
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+        const next = current === "dark" ? "light" : "dark";
+        applyTheme(next);
+        try {
+            localStorage.setItem(themeKey, next);
+        } catch (error) {
+            // Ignore storage errors; theme still applies for the current session.
+        }
+    }
+
+    function initScrollProgress() {
+        const bar = byId("scrollProgressBar");
+        if (!bar) {
+            return;
+        }
+
+        let ticking = false;
+        const update = function () {
+            const doc = document.documentElement;
+            const maxScroll = doc.scrollHeight - doc.clientHeight;
+            const progress = maxScroll > 0 ? Math.min(Math.max(window.scrollY / maxScroll, 0), 1) : 0;
+            bar.style.transform = "scaleX(" + progress + ")";
+            ticking = false;
+        };
+
+        const requestUpdate = function () {
+            if (!ticking) {
+                ticking = true;
+                window.requestAnimationFrame(update);
+            }
+        };
+
+        window.addEventListener("scroll", requestUpdate, { passive: true });
+        window.addEventListener("resize", requestUpdate);
+        requestUpdate();
+    }
 
     function openModal(name) {
         const modal = byId(name + "Modal");
@@ -86,13 +183,13 @@
 
         return '<span class="nav-user">Signed in as <strong>' + currentUser.username + "</strong></span>"
             + adminLink
-            + '<button class="btn ghost" type="button" onclick="logout()">Sign out</button>';
+            + '<button class="btn ghost" type="button" data-action="logout">Sign out</button>';
     }
 
     function signedOutMarkup() {
-        return '<button class="btn ghost" type="button" onclick="openModal(\'login\')">Passenger Sign In</button>'
+        return '<button class="btn ghost" type="button" data-action="open-modal" data-modal="login">Passenger Sign In</button>'
             + '<a class="btn ghost" href="/login">Admin Portal</a>'
-            + '<button class="btn primary" type="button" onclick="openModal(\'register\')">Create Account</button>';
+            + '<button class="btn primary" type="button" data-action="open-modal" data-modal="register">Create Account</button>';
     }
 
     function updateNav() {
@@ -180,7 +277,7 @@
             + '</div>'
             + '<div class="row">'
             + '<span class="hint">Economy from base fare. Premium classes calculated on booking.</span>'
-            + '<button class="btn primary" type="button" onclick="openBooking(\'' + flight.flightNumber + '\')">Book flight</button>'
+            + '<button class="btn primary" type="button" data-action="open-booking" data-flight-number="' + flight.flightNumber + '">Book flight</button>'
             + '</div>'
             + '</article>'
         )).join("");
@@ -214,8 +311,79 @@
             + "</span>"
             + '<span class="price booking-price">KES ' + Number(booking.price).toLocaleString() + "</span>"
             + "</div>"
+            + '<div class="actions nav-actions">'
+            + (booking.cancelled
+                ? '<button class="btn ghost" type="button" disabled>Unavailable</button>'
+                : '<button class="btn primary" type="button" data-action="pay-for-booking" data-booking-id="' + booking.id + '">Pay now</button>'
+                    + '<button class="btn ghost btn-danger" type="button" data-action="cancel-booking" data-booking-id="' + booking.id + '">Cancel</button>')
+            + "</div>"
             + "</article>"
         )).join("");
+    }
+
+    async function cancelBooking(bookingId) {
+        clearMsg("bookingActionMsg");
+        clearMsg("bookingMsg");
+
+        if (!token || !currentUser) {
+            openModal("login");
+            setMsg("loginMsg", "Sign in as a passenger to manage your bookings.", "info");
+            return;
+        }
+
+        if (!window.confirm("Cancel this booking?")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(API + "/api/bookings/" + bookingId, {
+                method: "DELETE",
+                headers: withCsrf({ Authorization: "Bearer " + token })
+            });
+            const payload = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                throw new Error(safeError(payload, "Could not cancel this booking."));
+            }
+
+            setMsg("bookingActionMsg", "Booking cancelled successfully.", "success");
+            await loadFlights();
+            await loadMyBookings();
+        } catch (error) {
+            setMsg("bookingActionMsg", error.message || "Could not cancel this booking.", "error");
+        }
+    }
+
+    async function payForBooking(bookingId) {
+        clearMsg("paymentMsg");
+        clearMsg("mpesaMsg");
+        if (!token || !currentUser) {
+            openModal("login");
+            setMsg("loginMsg", "Sign in as a passenger to continue payment.", "info");
+            return;
+        }
+
+        try {
+            const res = await fetch(API + "/api/bookings/my", {
+                headers: { Authorization: "Bearer " + token }
+            });
+            const payload = await res.json().catch(() => ([]));
+            if (!res.ok || !Array.isArray(payload)) {
+                throw new Error("Could not load your bookings for payment.");
+            }
+
+            const booking = payload.find((item) => item.id === bookingId);
+            if (!booking) {
+                throw new Error("Booking not found. Refresh and try again.");
+            }
+            if (booking.cancelled) {
+                throw new Error("Cancelled bookings cannot be paid.");
+            }
+
+            await openPaymentModal(booking);
+        } catch (error) {
+            setMsg("bookingMsg", error.message || "Could not open payment for this booking.", "error");
+        }
     }
 
     function currentFlight(flightNumber) {
@@ -318,7 +486,13 @@
     async function openPaymentModal(booking) {
         activeBooking = booking;
         activeTicket = null;
+        activePaymentMethod = "MPESA";
+        stripeReadyForBookingId = null;
+        stripeElements = null;
+        stripeCardElement = null;
+        stripeClientSecret = null;
         clearMsg("paymentMsg");
+        clearMsg("mpesaMsg");
         const paymentSummary = byId("paymentSummary");
         const stripeElement = byId("stripeElement");
         const cardholderName = byId("cardholderName");
@@ -339,14 +513,40 @@
         if (payNowBtn) {
             payNowBtn.disabled = true;
         }
+        const mpesaPhone = byId("mpesaPhone");
+        if (mpesaPhone) {
+            mpesaPhone.value = "";
+        }
 
         openModal("payment");
+        switchPaymentMethod("MPESA");
+    }
+
+    async function initializeStripeForBooking() {
+        if (!activeBooking) {
+            return;
+        }
+        if (stripeReadyForBookingId === activeBooking.id && stripeElements) {
+            return;
+        }
+
+        clearMsg("paymentMsg");
+        const payNowBtn = byId("payNowBtn");
+        const stripeElement = byId("stripeElement");
+        if (payNowBtn) {
+            payNowBtn.disabled = true;
+        }
+        if (stripeElement) {
+            stripeElement.innerHTML = "";
+        }
+        stripeCardElement = null;
+        stripeClientSecret = null;
 
         try {
             const stripe = await getStripeClient();
-            const intentRes = await fetch(API + "/api/payments/stripe/intent/" + booking.id, {
+            const intentRes = await fetch(API + "/api/payments/stripe/intent/" + activeBooking.id, {
                 method: "POST",
-                headers: { Authorization: "Bearer " + token }
+                headers: withCsrf({ Authorization: "Bearer " + token })
             });
             const intentPayload = await intentRes.json().catch(() => ({}));
 
@@ -354,16 +554,11 @@
                 throw new Error(safeError(intentPayload, "Could not initialize card payment."));
             }
 
-            stripeElements = stripe.elements({ clientSecret: intentPayload.clientSecret });
-            const paymentElement = stripeElements.create("payment", {
-                layout: "tabs",
-                defaultValues: {
-                    billingDetails: {
-                        name: booking.passengerName || ""
-                    }
-                }
-            });
-            paymentElement.mount("#stripeElement");
+            stripeClientSecret = intentPayload.clientSecret;
+            stripeElements = stripe.elements();
+            stripeCardElement = stripeElements.create("card");
+            stripeCardElement.mount("#stripeElement");
+            stripeReadyForBookingId = activeBooking.id;
 
             if (payNowBtn) {
                 payNowBtn.disabled = false;
@@ -373,10 +568,101 @@
         }
     }
 
+    function normalizePhone(value) {
+        const digits = (value || "").replace(/\D/g, "");
+        if (digits.startsWith("254") && digits.length === 12) {
+            return digits;
+        }
+        if (digits.startsWith("0") && digits.length === 10) {
+            return "254" + digits.slice(1);
+        }
+        if (digits.startsWith("7") && digits.length === 9) {
+            return "254" + digits;
+        }
+        return null;
+    }
+
+    async function submitMpesaPayment() {
+        clearMsg("paymentMsg");
+
+        if (!activeBooking) {
+            setMsg("paymentMsg", "No active booking selected for payment.", "error");
+            return;
+        }
+
+        const mpesaPhoneInput = byId("mpesaPhone");
+        const phoneNumber = normalizePhone(mpesaPhoneInput ? mpesaPhoneInput.value.trim() : "");
+        const mpesaPayBtn = byId("mpesaPayBtn");
+
+        if (!phoneNumber) {
+            setMsg("mpesaMsg", "Enter a valid Safaricom number (e.g. 0712345678).", "error");
+            return;
+        }
+
+        if (mpesaPayBtn) {
+            mpesaPayBtn.disabled = true;
+        }
+        setMsg("mpesaMsg", "Sending STK push request...", "info");
+
+        try {
+            const res = await fetch(API + "/api/payments/mpesa/pay", {
+                method: "POST",
+                headers: withCsrf({
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + token
+                }),
+                body: JSON.stringify({ bookingId: activeBooking.id, phoneNumber })
+            });
+            const payload = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                throw new Error(safeError(payload, "Could not start Mpesa payment."));
+            }
+
+            setMsg("mpesaMsg", "Mpesa prompt sent. Check your phone and enter your PIN to complete payment.", "success");
+        } catch (error) {
+            setMsg("mpesaMsg", error.message || "Mpesa payment failed.", "error");
+        } finally {
+            if (mpesaPayBtn) {
+                mpesaPayBtn.disabled = false;
+            }
+        }
+    }
+
+    function switchPaymentMethod(method) {
+        activePaymentMethod = method === "STRIPE" ? "STRIPE" : "MPESA";
+
+        const mpesaTab = byId("mpesaTab");
+        const stripeTab = byId("stripeTab");
+        const mpesaPanel = byId("mpesaPanel");
+        const stripePanel = byId("stripePanel");
+
+        if (mpesaTab) {
+            mpesaTab.classList.toggle("active", activePaymentMethod === "MPESA");
+        }
+        if (stripeTab) {
+            stripeTab.classList.toggle("active", activePaymentMethod === "STRIPE");
+        }
+        if (mpesaPanel) {
+            mpesaPanel.style.display = activePaymentMethod === "MPESA" ? "block" : "none";
+        }
+        if (stripePanel) {
+            stripePanel.style.display = activePaymentMethod === "STRIPE" ? "block" : "none";
+        }
+
+        if (activePaymentMethod === "STRIPE") {
+            clearMsg("mpesaMsg");
+            initializeStripeForBooking();
+        } else {
+            clearMsg("paymentMsg");
+            clearMsg("mpesaMsg");
+        }
+    }
+
     async function submitStripePayment() {
         clearMsg("paymentMsg");
 
-        if (!activeBooking || !stripeClient || !stripeElements) {
+        if (!activeBooking || !stripeClient || !stripeCardElement || !stripeClientSecret) {
             setMsg("paymentMsg", "Payment is not ready yet. Reopen the payment modal and try again.", "error");
             return;
         }
@@ -388,16 +674,13 @@
         }
 
         try {
-            const result = await stripeClient.confirmPayment({
-                elements: stripeElements,
-                confirmParams: {
-                    payment_method_data: {
-                        billing_details: {
-                            name: cardholderName || activeBooking.passengerName
-                        }
+            const result = await stripeClient.confirmCardPayment(stripeClientSecret, {
+                payment_method: {
+                    card: stripeCardElement,
+                    billing_details: {
+                        name: cardholderName || activeBooking.passengerName
                     }
-                },
-                redirect: "if_required"
+                }
             });
 
             if (result.error) {
@@ -406,7 +689,7 @@
 
             const syncRes = await fetch(API + "/api/payments/stripe/sync/" + activeBooking.id, {
                 method: "POST",
-                headers: { Authorization: "Bearer " + token }
+                headers: withCsrf({ Authorization: "Bearer " + token })
             });
             const syncPayload = await syncRes.json().catch(() => ({}));
 
@@ -616,7 +899,7 @@
         try {
             const res = await fetch(API + "/api/auth/login", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: withCsrf({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ username, password })
             });
             const payload = await res.json().catch(() => ({}));
@@ -661,7 +944,7 @@
         try {
             const res = await fetch(API + "/api/auth/register", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: withCsrf({ "Content-Type": "application/json" }),
                 body: JSON.stringify({ username, email, password, role: "PASSENGER" })
             });
             const text = await res.text();
@@ -704,10 +987,10 @@
         try {
             const res = await fetch(API + "/api/bookings", {
                 method: "POST",
-                headers: {
+                headers: withCsrf({
                     "Content-Type": "application/json",
                     Authorization: "Bearer " + token
-                },
+                }),
                 body: JSON.stringify({ flightNumber, passengerName, seatClass, seatNumber })
             });
             const payload = await res.json().catch(() => ({}));
@@ -765,6 +1048,149 @@
         });
     }
 
+    function scrollToTarget(targetId) {
+        const target = byId(targetId);
+        if (target) {
+            target.scrollIntoView({ behavior: "smooth" });
+        }
+    }
+
+    function initActionHandlers() {
+        document.addEventListener("click", (event) => {
+            const trigger = event.target.closest("[data-action]");
+            if (!trigger) {
+                return;
+            }
+
+            const action = trigger.dataset.action;
+
+            if (action === "toggle-theme") {
+                event.preventDefault();
+                toggleTheme();
+                return;
+            }
+
+            if (action === "open-modal") {
+                event.preventDefault();
+                openModal(trigger.dataset.modal);
+                return;
+            }
+
+            if (action === "close-modal") {
+                event.preventDefault();
+                closeModal(trigger.dataset.modal);
+                return;
+            }
+
+            if (action === "switch-modal") {
+                event.preventDefault();
+                switchModal(trigger.dataset.currentModal, trigger.dataset.nextModal);
+                return;
+            }
+
+            if (action === "scroll-to") {
+                event.preventDefault();
+                scrollToTarget(trigger.dataset.target);
+                return;
+            }
+
+            if (action === "set-trip-tab") {
+                event.preventDefault();
+                setTripTab(trigger.dataset.tripMode);
+                return;
+            }
+
+            if (action === "switch-payment-method") {
+                event.preventDefault();
+                switchPaymentMethod(trigger.dataset.method);
+                return;
+            }
+
+            if (action === "download-ticket") {
+                event.preventDefault();
+                downloadTicket();
+                return;
+            }
+
+            if (action === "print-ticket") {
+                event.preventDefault();
+                printTicket();
+                return;
+            }
+
+            if (action === "logout") {
+                event.preventDefault();
+                logout();
+                return;
+            }
+
+            if (action === "open-booking") {
+                event.preventDefault();
+                openBooking(trigger.dataset.flightNumber);
+                return;
+            }
+
+            if (action === "pay-for-booking") {
+                event.preventDefault();
+                payForBooking(Number(trigger.dataset.bookingId));
+                return;
+            }
+
+            if (action === "cancel-booking") {
+                event.preventDefault();
+                cancelBooking(Number(trigger.dataset.bookingId));
+            }
+        });
+
+        const searchForm = byId("searchForm");
+        if (searchForm) {
+            searchForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                searchFlights();
+            });
+        }
+
+        const loginForm = byId("loginForm");
+        if (loginForm) {
+            loginForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                doLogin();
+            });
+        }
+
+        const registerForm = byId("registerForm");
+        if (registerForm) {
+            registerForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                doRegister();
+            });
+        }
+
+        const bookingForm = byId("bookingForm");
+        if (bookingForm) {
+            bookingForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                submitBooking();
+            });
+        }
+
+        const mpesaForm = byId("mpesaForm");
+        if (mpesaForm) {
+            mpesaForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                submitMpesaPayment();
+            });
+        }
+
+        const stripeForm = byId("stripeForm");
+        if (stripeForm) {
+            stripeForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                submitStripePayment();
+            });
+        }
+    }
+
     function initHomePage() {
         if (!hasHomePage()) {
             return;
@@ -775,23 +1201,11 @@
         loadMyBookings();
     }
 
-    window.openModal = openModal;
-    window.closeModal = closeModal;
-    window.switchModal = switchModal;
-    window.searchFlights = searchFlights;
-    window.resetSearch = resetSearch;
-    window.setTripTab = setTripTab;
-    window.openBooking = openBooking;
-    window.doLogin = doLogin;
-    window.doRegister = doRegister;
-    window.submitBooking = submitBooking;
-    window.submitStripePayment = submitStripePayment;
-    window.downloadTicket = downloadTicket;
-    window.printTicket = printTicket;
-    window.logout = logout;
-
     document.addEventListener("DOMContentLoaded", function () {
+        initTheme();
+        initScrollProgress();
         initModalDismiss();
+        initActionHandlers();
         initHomePage();
     });
 }());
