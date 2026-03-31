@@ -6,7 +6,6 @@ Flyte/target/
 *.class
 *.jar
 *.war
-application.properties
 # ==========================================
 # CREDENTIALS - Never commit these
 # ==========================================
