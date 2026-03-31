@@ -1,6 +1,7 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
-ARG CACHEBUST=3
+ARG CACHEBUST=99999
+RUN echo "cache bust"
 COPY pom.xml ./pom.xml
 COPY src ./src
 COPY mvnw .
