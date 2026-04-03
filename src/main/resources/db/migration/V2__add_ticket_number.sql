@@ -1,0 +1,1 @@
+ALTER TABLE bookings ADD COLUMN ticket_number VARCHAR(255) UNIQUE;

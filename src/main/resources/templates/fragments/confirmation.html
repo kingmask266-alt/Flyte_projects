@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Booking Confirmation — Flyte</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+        :root {
+            --bg: #0a0c10;
+            --surface: #111318;
+            --border: #1e2128;
+            --text: #e8eaf0;
+            --muted: #6b7280;
+            --gold: #f5a623;
+            --green: #22c55e;
+        }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .confirmation-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 2rem;
+            max-width: 500px;
+            text-align: center;
+        }
+        .success-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .ticket-number {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(245, 166, 35, 0.1);
+            border: 1px solid rgba(245, 166, 35, 0.3);
+            border-radius: 8px;
+        }
+        .booking-details {
+            text-align: left;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+        }
+        .detail-label {
+            color: var(--muted);
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: var(--gold);
+            color: #000;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+<div class="confirmation-card">
+    <div class="success-icon">✅</div>
+    <h1 style="font-family: 'Syne', sans-serif; font-size: 1.8rem; margin-bottom: 0.5rem;">Booking Confirmed!</h1>
+    <p style="color: var(--muted); margin-bottom: 1.5rem;">Your flight booking is confirmed and payment processed.</p>
+
+    <div class="ticket-number" th:text="${booking.ticketNumber}">FLY-20260403-000001</div>
+
+    <div class="booking-details">
+        <div class="detail-row">
+            <span class="detail-label">Passenger:</span>
+            <span th:text="${booking.passengerName}">—</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Flight:</span>
+            <span th:text="${booking.flight.flightNumber}">—</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Route:</span>
+            <span th:text="${booking.flight.origin + ' → ' + booking.flight.destination}">—</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Seat:</span>
+            <span th:text="${booking.seatNumber}">—</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Departure:</span>
+            <span th:text="${#temporals.format(booking.flight.departureTime, 'MMM dd, yyyy HH:mm')}">—</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Amount Paid:</span>
+            <span style="color: var(--gold); font-weight: 600;" th:text="'KES ' + ${#numbers.formatDecimal(booking.price, 1, 'COMMA', 0, 'POINT')}">—</span>
+        </div>
+    </div>
+
+    <p style="font-size: 0.85rem; color: var(--muted); margin: 1.5rem 0;">Check your email for a detailed receipt and boarding pass.</p>
+    <a href="/dashboard" class="btn">Go to Dashboard</a>
+</div>
+</body>
+</html>

@@ -62,9 +62,20 @@ public class Booking {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime bookedAt;
+    private String ticketNumber;
 
     @PrePersist
     protected void onCreate() {
         this.bookedAt = LocalDateTime.now();
+        this.ticketNumber = "GENERATING"; // Temporary, will update after ID assignment
     }
+
+    public static String generateTicketNumber(Long bookingId, LocalDateTime bookedAt) {
+        String date = bookedAt.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        return String.format("FLY-%s-%06d", date, bookingId);
+    }
+
+
+
+
 }

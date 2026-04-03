@@ -312,6 +312,10 @@
                 <span class="summary-value" th:text="'#' + ${booking.id}">#0</span>
             </div>
             <div class="summary-row">
+                <span class="summary-label">Ticket Number</span>
+                <span class="summary-value" th:text="${booking.ticketNumber}" style="font-family: 'Courier New', monospace; font-weight: 600; color: var(--gold);">—</span>
+            </div>
+            <div class="summary-row">
                 <span class="summary-label">Passenger</span>
                 <span class="summary-value" th:text="${booking.passengerName}">—</span>
             </div>

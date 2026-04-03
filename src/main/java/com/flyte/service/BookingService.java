@@ -1,17 +1,19 @@
 package com.flyte.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.flyte.dto.BookingRequest;
 import com.flyte.entity.Booking;
 import com.flyte.entity.Flight;
 import com.flyte.entity.User;
 import com.flyte.exception.ResourceNotFoundException;
 import com.flyte.repository.BookingRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -48,8 +50,11 @@ public class BookingService {
                 .build();
 
         flight.setAvailableSeats(flight.getAvailableSeats() - 1);
-        return bookingRepository.save(booking);
+        booking = bookingRepository.save(booking); // Save to get ID
+        booking.setTicketNumber(Booking.generateTicketNumber(booking.getId(), booking.getBookedAt()));
+        return bookingRepository.save(booking); // Update with ticket
     }
+
 
     @Transactional
     public Booking cancelBooking(Long bookingId, String username) {
