@@ -44,11 +44,6 @@ src/main/java/com/flyte/
 Getting Started
 Clone the repo:
 
-bash
-git clone https://github.com/<your-org>/Flyte.git
-cd Flyte
-Configure your database in application.properties (see application.properties.example).
-
 Run migrations and seeders (AdminSeeder, FlightSeeder).
 
 Start the app:
